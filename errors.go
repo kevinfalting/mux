@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 )
 
 // ErrorHandler holds resources for returning errors from handlers. If the writer
@@ -90,11 +91,11 @@ func (h *handlerError) Error() string {
 
 // Error will return an error that can be used by the ErrorHandler. The error
 // itself is not sent back to the client, but logged instead. The status and
-// responseMsg are both used to respond to the client.
-func Error(err error, status int, responseMsg string) error {
+// optional responseMsg are both used to respond to the client.
+func Error(err error, status int, responseMsg ...string) error {
 	return &handlerError{
 		err:         err,
 		status:      status,
-		responseMsg: responseMsg,
+		responseMsg: strings.Join(responseMsg, " "),
 	}
 }
