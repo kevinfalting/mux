@@ -73,26 +73,28 @@ func (eh *ErrorHandler) Err(h errHandlerFunc) http.Handler {
 }
 
 type handlerError struct {
-	err    error
-	status int
-	msg    string
+	err         error
+	status      int
+	responseMsg string
 }
 
 // StatusMsg will return the http status code and message to return to the client.
 func (h *handlerError) StatusMsg() (int, string) {
-	return h.status, h.msg
+	return h.status, h.responseMsg
 }
 
 // Error satisfies the error interface
 func (h *handlerError) Error() string {
-	return fmt.Sprintf("status=%d msg=%q err=%q\n", h.status, h.msg, h.err)
+	return fmt.Sprintf("status=%d msg=%q err=%q\n", h.status, h.responseMsg, h.err)
 }
 
-// Error will return an error that can be used by the ErrorHandler
-func Error(err error, status int, msg string) error {
+// Error will return an error that can be used by the ErrorHandler. The error
+// itself is not sent back to the client, but logged instead. The status and
+// responseMsg are both used to respond to the client.
+func Error(err error, status int, responseMsg string) error {
 	return &handlerError{
-		err:    err,
-		status: status,
-		msg:    msg,
+		err:         err,
+		status:      status,
+		responseMsg: responseMsg,
 	}
 }
