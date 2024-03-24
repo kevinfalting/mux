@@ -48,11 +48,12 @@ func WithErrFunc(f func(w http.ResponseWriter, error string, code int)) errOptio
 	}
 }
 
-type errHandlerFunc func(w http.ResponseWriter, r *http.Request) error
+// ErrHandlerFunc is the function signature for handlers that return an error.
+type ErrHandlerFunc func(w http.ResponseWriter, r *http.Request) error
 
 // Err will accept a handler that can return an error and handle it according to
 // the errFunc provided or http.Error by default.
-func (eh *ErrorHandler) Err(h errHandlerFunc) http.Handler {
+func (eh *ErrorHandler) Err(h ErrHandlerFunc) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		err := h(w, r)
 		if err == nil {
