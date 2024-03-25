@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 )
 
@@ -14,38 +13,8 @@ import (
 // a log of errors being returned to the handler. The errFunc uses http.Error if
 // no function is provided.
 type ErrorHandler struct {
-	writer  io.Writer
-	errFunc func(w http.ResponseWriter, error string, code int)
-}
-
-// NewErrorHandler creates a new ErrorHandler with the provided options.
-func NewErrorHandler(options ...errOption) *ErrorHandler {
-	eh := ErrorHandler{
-		writer:  os.Stderr,
-		errFunc: http.Error,
-	}
-
-	for _, opt := range options {
-		opt(&eh)
-	}
-
-	return &eh
-}
-
-type errOption func(eh *ErrorHandler)
-
-// WithErrWriter sets the writer on the ErrorHandler
-func WithErrWriter(w io.Writer) errOption {
-	return func(eh *ErrorHandler) {
-		eh.writer = w
-	}
-}
-
-// WithErrFunc sets the function to call when responding to the client with an error.
-func WithErrFunc(f func(w http.ResponseWriter, error string, code int)) errOption {
-	return func(eh *ErrorHandler) {
-		eh.errFunc = f
-	}
+	ErrWriter io.Writer
+	ErrFunc   func(w http.ResponseWriter, error string, code int)
 }
 
 // ErrHandlerFunc is the function signature for handlers that return an error.
@@ -54,6 +23,10 @@ type ErrHandlerFunc func(w http.ResponseWriter, r *http.Request) error
 // Err will accept a handler that can return an error and handle it according to
 // the errFunc provided or http.Error by default.
 func (eh *ErrorHandler) Err(h ErrHandlerFunc) http.Handler {
+	if eh.ErrFunc == nil {
+		eh.ErrFunc = http.Error
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		err := h(w, r)
 		if err == nil {
@@ -63,13 +36,13 @@ func (eh *ErrorHandler) Err(h ErrHandlerFunc) http.Handler {
 		var e interface{ StatusMsg() (int, string) }
 		if errors.As(err, &e) {
 			status, msg := e.StatusMsg()
-			eh.errFunc(w, msg, status)
+			eh.ErrFunc(w, msg, status)
 		} else {
-			eh.errFunc(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			eh.ErrFunc(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		}
 
-		if eh.writer != nil {
-			fmt.Fprint(eh.writer, err)
+		if eh.ErrWriter != nil {
+			fmt.Fprint(eh.ErrWriter, err)
 		}
 	})
 }
