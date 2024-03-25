@@ -60,7 +60,24 @@ func (h *handlerError) StatusMsg() (int, string) {
 
 // Error satisfies the error interface
 func (h *handlerError) Error() string {
-	return fmt.Sprintf("status=%d msg=%q err=%q\n", h.status, h.responseMsg, h.err)
+	return fmt.Sprintf("status=%d msg=%q err=%q", h.status, h.responseMsg, h.err)
+}
+
+// Is reports whether any error in err's tree matches target.
+func (h *handlerError) Is(target error) bool {
+	return errors.Is(h.err, target)
+}
+
+// As finds the first error in err's tree that matches target, and if one is
+// found, sets target to that error value and returns true. Otherwise, it
+// returns false.
+func (h *handlerError) As(target any) bool {
+	return errors.As(h.err, target)
+}
+
+// Unwrap returns the underlying error
+func (h *handlerError) Unwrap() error {
+	return h.err
 }
 
 // Error will return an error that can be used by the ErrorHandler. The error
